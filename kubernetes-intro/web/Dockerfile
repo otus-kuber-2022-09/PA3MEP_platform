@@ -1,10 +1,10 @@
-FROM httpd:2.4
+FROM pa3mep/kubernetes-intro:1.0
 
-COPY ./passwd /etc
-COPY ./group /etc
-COPY ./httpd.conf /usr/local/apache2/conf
-RUN mkdir /app
-COPY ./homework.html /app
+# COPY ./passwd /etc
+# COPY ./group /etc
+# COPY ./httpd.conf /usr/local/apache2/conf
+# RUN mkdir /app
+# COPY ./homework.html /app
 
 # docker build -t kpa3mep/kubernetes-intro:1.0 .
 
