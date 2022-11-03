@@ -39,31 +39,41 @@ helm uninstall nginx-ingress stable/nginx-ingress --wait --namespace=nginx-ingre
 <pre><code>
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo update
-helm upgrade --debug --install nginx-ingress ingress-nginx/ingress-nginx --wait --create-namespace --namespace=nginx-ingress
+
+helm search repo nginx-ingress
+NAME                            CHART VERSION   APP VERSION     DESCRIPTION                                       
+nginx-stable/nginx-ingress      0.15.1          2.4.1           NGINX Ingress Controller
+helm install --debug  my-nginx-ingress nginx-stable/nginx-ingress --wait --create-namespace --namespace=nginx-ingress --version=0.15.1
 </pre></code>
 
-helm uninstall nginx-ingress ingress-nginx/ingress-nginx --wait --namespace=nginx-ingress
+kubectl get svc -A
 
-kubectl get pods -A
+После этого EXTERNAL-IP всё ещё находится в состоянии pending, что в целом логично, потому что нет никого кто бы выдал бы ему адрес.
 
 <pre><code>
-NAMESPACE            NAME                                                     READY   STATUS    RESTARTS   AGE
-default              nginx-ingress-ingress-nginx-controller-6b8c489d4-h5g2t   1/1     Running   0          10m
-kube-system          coredns-565d847f94-7rzpf                                 1/1     Running   0          23m
-kube-system          coredns-565d847f94-bkfhb                                 1/1     Running   0          23m
-kube-system          etcd-kind-control-plane                                  1/1     Running   0          23m
-kube-system          kindnet-676mj                                            1/1     Running   0          23m
-kube-system          kindnet-fcn9j                                            1/1     Running   0          23m
-kube-system          kindnet-p9czv                                            1/1     Running   0          23m
-kube-system          kindnet-wv66l                                            1/1     Running   0          23m
-kube-system          kube-apiserver-kind-control-plane                        1/1     Running   0          23m
-kube-system          kube-controller-manager-kind-control-plane               1/1     Running   0          23m
-kube-system          kube-proxy-5d9rr                                         1/1     Running   0          23m
-kube-system          kube-proxy-8pbgt                                         1/1     Running   0          23m
-kube-system          kube-proxy-bwfzz                                         1/1     Running   0          23m
-kube-system          kube-proxy-s2shd                                         1/1     Running   0          23m
-kube-system          kube-scheduler-kind-control-plane                        1/1     Running   0          24m
-local-path-storage   local-path-provisioner-684f458cdd-8nd2x                  1/1     Running   0          23m
+kubectl get svc -A
+NAMESPACE       NAME                             TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
+default         kubernetes                       ClusterIP      10.96.0.1        <none>        443/TCP                      75d
+kube-system     kube-dns                         ClusterIP      10.96.0.10       <none>        53/UDP,53/TCP,9153/TCP       75d
+nginx-ingress   my-nginx-ingress-nginx-ingress   LoadBalancer   10.106.137.250   <pending>     80:32401/TCP,443:31776/TCP   111m
+</pre></code>
+
+Но с этим может запросто справиться MetalLB. Попробуем.
+
+<pre><code>
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.3/manifests/namespace.yaml
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.3/manifests/metallb.yaml
+kubectl create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
+</pre></code>
+
+И после этого нах nginx ingress service получает аддресс
+
+<pre><code>
+kubectl get svc -A
+NAMESPACE       NAME                             TYPE           CLUSTER-IP       EXTERNAL-IP    PORT(S)                      AGE
+default         kubernetes                       ClusterIP      10.96.0.1        <none>         443/TCP                      75d
+kube-system     kube-dns                         ClusterIP      10.96.0.10       <none>         53/UDP,53/TCP,9153/TCP       75d
+nginx-ingress   my-nginx-ingress-nginx-ingress   LoadBalancer   10.106.137.250   172.17.255.1   80:32401/TCP,443:31776/TCP   3h10m
 </pre></code>
 
 <H2>cert-manager</H2>
@@ -97,3 +107,13 @@ cert-manager-webhook-566bd88f7b-hc4cv      1/1     Running   0          50s
 </pre></code>
 
 <H2>chartmuseum</H2>
+
+kubectl create ns chartmuseum
+helm repo add chartmuseum https://chartmuseum.github.io/charts
+helm install --debug --wait my-chartmuseum chartmuseum/chartmuseum --version 3.9.1 --namespace=chartmuseum -f chartmuseum/values.yaml
+helm ls -n chartmuseum
+kubectl get secrets -n chartmuseum
+
+curl -vvv -k https://172.17.255.1.nip.io
+
+helm uninstall my-chartmuseum --namespace=chartmuseum

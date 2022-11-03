@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    kubernetes.io/tls-acme: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-production"
+    cert-manager.io/acme-challenge-type: http01
+  hosts:
+    - name: chartmuseum.172.17.255.1
+      path: /
+      tls: true
+      tlsSecret: chartmuseum.172.17.255.1
+service:
+  servicename:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  loadBalancerSourceRanges: []
+  externalPort: 8080
+  nodePort:
+  annotations: {}
+  labels: {}
