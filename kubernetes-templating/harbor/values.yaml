@@ -9,11 +9,11 @@ expose:
     # The tls certificate can be generated manually or by cert manager
     # 3) none: configure no tls certificate for the ingress. If the default
     # tls certificate is configured in the ingress controller, choose this option
-    certSource: secret
+    certSource: auto
     auto:
       # The common name used to generate the certificate, it's necessary
       # when the type isn't "ingress"
-      commonName: "MY-HARBOR"
+      commonName: "harbor.35.228.85.107.nip.io"
     secret:
       # The name of secret which contains keys named:
       # "tls.crt" - the certificate
@@ -26,7 +26,7 @@ expose:
       notarySecretName: ""
   ingress:
     hosts:
-      core: harbor.192.168.222.1.owoo.org
+      core: harbor.35.228.85.107.nip.io
       notary: notary.harbor.domain
     # set to the type of ingress controller if it has specific requirements.
     # leave as `default` for most ingress controllers.
@@ -87,7 +87,7 @@ expose:
 # the IP address of k8s node
 #
 # If Harbor is deployed behind the proxy, set it as the URL of proxy
-externalURL: https://harbor.192.168.222.1.owoo.org
+externalURL: https://harbor.35.228.85.107.nip.io
 
 # The internal TLS used for harbor components secure communicating. In order to enable https
 # in each components tls cert files need to provided in advance.

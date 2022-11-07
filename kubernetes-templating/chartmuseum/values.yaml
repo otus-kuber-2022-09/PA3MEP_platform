@@ -8,7 +8,7 @@ ingress:
     cert-manager.io/acme-challenge-type: http01
     metallb.universe.tf/address-pool: my-pool
   hosts:
-    - name: chartmuseum.192.168.222.1.owoo.org
+    - name: chartmuseum.35.228.85.107.nip.io
       path: /
       tls: true
-      tlsSecret: chartmuseum.192.168.222.1.owoo.org
+      tlsSecret: chartmuseum.35.228.85.107.nip.io
