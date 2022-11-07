@@ -32,7 +32,7 @@ stable  https://charts.helm.sh/stable
 kubectl create ns nginx-ingress
 <pre><code>
 helm upgrade --debug --install nginx-ingress stable/nginx-ingress --wait --namespace=nginx-ingress --version=1.41.3
-helm uninstall nginx-ingress stable/nginx-ingress --wait --namespace=nginx-ingress
+helm uninstall my-nginx-ingress stable/nginx-ingress --wait --namespace=nginx-ingress
 </pre></code>
 
 Эта версия не сработала. Попробуем другую
@@ -44,6 +44,8 @@ helm search repo nginx-ingress
 NAME                            CHART VERSION   APP VERSION     DESCRIPTION                                       
 nginx-stable/nginx-ingress      0.15.1          2.4.1           NGINX Ingress Controller
 helm install --debug  my-nginx-ingress nginx-stable/nginx-ingress --wait --create-namespace --namespace=nginx-ingress --version=0.15.1
+
+helm install --debug my-nginx-ingress nginx-stable/nginx-ingress --namespace=nginx-ingress
 </pre></code>
 
 kubectl get svc -A
@@ -58,22 +60,23 @@ kube-system     kube-dns                         ClusterIP      10.96.0.10      
 nginx-ingress   my-nginx-ingress-nginx-ingress   LoadBalancer   10.106.137.250   <pending>     80:32401/TCP,443:31776/TCP   111m
 </pre></code>
 
-Но с этим может запросто справиться MetalLB. Попробуем.
+Но с этим может запросто справиться MetalLB. Попробуем. Это необходимо только если Кубернетес кластер локальный. В облаках об этом заботится провайдер.
 
 <pre><code>
 kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.3/manifests/namespace.yaml
 kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.3/manifests/metallb.yaml
 kubectl create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
+kubectl apply -f 3.\ IPAddressPool.yaml
 </pre></code>
 
-И после этого нах nginx ingress service получает аддресс
+И после этого нах nginx ingress service получает адрес
 
 <pre><code>
 kubectl get svc -A
 NAMESPACE       NAME                             TYPE           CLUSTER-IP       EXTERNAL-IP    PORT(S)                      AGE
 default         kubernetes                       ClusterIP      10.96.0.1        <none>         443/TCP                      75d
 kube-system     kube-dns                         ClusterIP      10.96.0.10       <none>         53/UDP,53/TCP,9153/TCP       75d
-nginx-ingress   my-nginx-ingress-nginx-ingress   LoadBalancer   10.106.137.250   172.17.255.1   80:32401/TCP,443:31776/TCP   3h10m
+nginx-ingress   my-nginx-ingress-nginx-ingress   LoadBalancer   10.106.137.250   192.168.222.1  80:32401/TCP,443:31776/TCP   3h10m
 </pre></code>
 
 <H2>cert-manager</H2>
@@ -94,26 +97,59 @@ kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/
 </pre></code>
 
 Устанавливаем cert-manager 1.10.0
-</pre></code>
-helm upgrade --install cert-manager jetstack/cert-manager --wait --create-namespace --namespace=cert-manager --version v1.10.0
+<pre><code>
+kubectl create ns cert-manager
+helm upgrade --install cert-manager jetstack/cert-manager --wait --namespace=cert-manager --version v1.10.0 --set installCRDs=true
 </pre></code>
 
 kubectl get pods -n cert-manager
-</pre></code>
+<pre><code>
 NAME                                       READY   STATUS    RESTARTS   AGE
 cert-manager-69b456d85c-4rflk              1/1     Running   0          50s
 cert-manager-cainjector-5f44d58c4b-wsb8l   1/1     Running   0          50s
 cert-manager-webhook-566bd88f7b-hc4cv      1/1     Running   0          50s
 </pre></code>
 
+Добавляем ClusterIssuer
+<pre><code>
+kubectl apply -f cert-manager/ClusterIssuer.yaml
+</pre></code>
+
+curl -L -o kubectl-cert-manager.tar.gz https://github.com/jetstack/cert-manager/releases/latest/download/kubectl-cert_manager-linux-amd64.tar.gz
+tar xzf kubectl-cert-manager.tar.gz
+sudo mv kubectl-cert_manager /usr/local/bin
+kubectl cert-manager check api
+
+helm uninstall cert-manager --namespace=cert-manager
+
 <H2>chartmuseum</H2>
 
 kubectl create ns chartmuseum
+kubectl apply -f chartmuseum/secret.yaml
 helm repo add chartmuseum https://chartmuseum.github.io/charts
 helm install --debug --wait my-chartmuseum chartmuseum/chartmuseum --version 3.9.1 --namespace=chartmuseum -f chartmuseum/values.yaml
 helm ls -n chartmuseum
 kubectl get secrets -n chartmuseum
 
-curl -vvv -k https://172.17.255.1.nip.io
+
+ip route add 192.168.222.0/24 via 192.168.211.128
+
+curl -vvv -k https://192.168.222.1 -H 'Host: chartmuseum.192.168.222.1.owoo.org'
+
+HTTP/1.1 200 OK
 
 helm uninstall my-chartmuseum --namespace=chartmuseum
+
+<H2>harbor</H2>
+
+helm repo add harbor https://helm.goharbor.io
+helm repo update
+kubectl create ns harbor
+
+kubectl apply -f harbor/StorageClass.yaml
+
+helm install --debug --wait my-harbor harbor/harbor --version 1.10.1 --namespace=harbor -f harbor/values.yaml
+
+helm uninstall my-harbor --namespace=harbor
+
+https://harbor.192.168.222.2.owoo.org
