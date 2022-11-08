@@ -201,12 +201,66 @@ kubectl delete svc frontend -n hipster-shop
 kubectl delete ingress frontend -n hipster-shop
 helm upgrade --install frontend frontend --namespace hipster-shop
 
+helm uninstall frontend --namespace hipster-shop
+
 И привет, у нас появился ингресс и мы видим наш магазин на прямую в браузере по адресу http://shop.35.228.85.107.nip.io/
 
 
-helm upgrade --install hipster-shop hipster-shop --namespace hipster-shop --set frontend.service.NodePort=31234
+helm upgrade  hipster-shop hipster-shop --namespace hipster-shop --set frontend.service.NodePort=31234
 
 
 Удаляем всё лишнее. 
 helm uninstall hipster-shop --namespace hipster-shop
 
+<H2>helm-secrets</H2>
+
+Устанавливаем плагин helm-secrets. Мы на Убунту поэтому ничего дополнительно устанавливать не надо
+helm plugin install https://github.com/futuresimple/helm-secrets --version 2.0.2
+
+Selecting previously unselected package sops.
+(Reading database ... 204655 files and directories currently installed.)
+Preparing to unpack /tmp/sops ...
+Unpacking sops (3.0.4) ...
+Setting up sops (3.0.4) ...
+Installed plugin: secrets
+
+gpg --full-generate-key
+
+gpg -k
+gpg: checking the trustdb
+gpg: marginals needed: 3  completes needed: 1  trust model: pgp
+gpg: depth: 0  valid:   1  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 1u
+/home/tony/.gnupg/pubring.kbx
+-----------------------------
+pub   rsa3072 2022-11-08 [SC]
+      6F6925BB230AC4388DEF9A88028D5A6DEDE16F22
+uid           [ultimate] Tony-OTUS (OTUS KEY) <pycckuu79@gmail.com>
+sub   rsa3072 2022-11-08 [E]
+
+sops -e -i --pgp 6F6925BB230AC4388DEF9A88028D5A6DEDE16F22 frontend/secrets.yaml
+
+
+helm secrets view frontend/secrets.yaml
+sops -d frontend/secrets.yaml
+
+helm secrets upgrade --install frontend frontend --namespace hipster-shop -f frontend/values.yaml -f frontend/secrets.yaml
+
+![](HipsterShopSecret.png)
+
+<H2>Kubecfg</H2>
+
+kubecfg version
+
+kubecfg version: v0.22.0
+jsonnet version: v0.17.0
+client-go version: v0.0.0-master+$Format:%h$
+
+kubecfg show kubecfg/services.jsonnet
+
+kubecfg update services.jsonnet --namespace hipster-shop
+
+
+<H2>kustomize</H2>
+
+kustomize build  environments/hipster-shop
+kustomize build  environments/hipster-shop-prod
