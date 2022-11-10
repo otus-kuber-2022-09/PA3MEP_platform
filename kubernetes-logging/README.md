@@ -60,12 +60,13 @@ shippingservice-64999cdc59-xfspd         1/1     Running   0             20m   1
 
 helm repo add elastic https://helm.elastic.co
 helm repo add fluent https://fluent.github.io/helm-charts
+helm repo add stable https://charts.helm.sh/stable
 helm repo update
 
 kubectl create ns observability
 helm upgrade --install elasticsearch elastic/elasticsearch --namespace observability -f elasticsearch.values.yaml
 helm upgrade --install kibana elastic/kibana --namespace observability
-helm upgrade --install fluent-bit fluent/fluent-bit --namespace observability
+helm upgrade --install fluent-bit stable/fluent-bit --namespace observability  -f fluent-bit.values.yaml
 
 <H2>Установка nginx-ingress</H2>
 
@@ -81,4 +82,17 @@ helm upgrade --install kibana elastic/kibana --namespace observability -f kibana
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 helm repo list
-helm upgrade --install elasticsearch-exporter prometheus-community/prometheus-elasticsearch-exporter --set es.uri=http://elasticsearch-master:9200 --namespace=observability
+helm upgrade --install elasticsearch-exporter prometheus-community/prometheus-elasticsearch-exporter --set es.uri=http://elasticsearch-master:9200 --namespace=observability -f prometheus-elasticsearch-exporter-values.yaml
+Error: UPGRADE FAILED: resource mapping not found for name: "elasticsearch-exporter-prometheus-elasticsearch-exporter" namespace: "" from "": no matches for kind "ServiceMonitor" in version "monitoring.coreos.com/v1"
+ensure CRDs are installed first
+
+
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack --namespace=observability
+
+helm upgrade --install elasticsearch-exporter prometheus-community/prometheus-elasticsearch-exporter --set es.uri=http://elasticsearch-master:9200 --namespace=observability -f prometheus-elasticsearch-exporter-values.yaml
+
+
+
+helm upgrade --install elasticsearch-exporter stable/elasticsearch-exporter --set es.uri=http://elasticsearch-master:9200 --set serviceMonitor.enabled=true --namespace=observability
