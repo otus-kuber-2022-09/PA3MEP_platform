@@ -1,0 +1,99 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: simple-web
+  labels:
+    app: simple-web
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simple-web
+  namespace: simple-web
+  labels:
+    app: simple-web
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: simple-web
+  template:
+    metadata:
+      labels:
+        app: simple-web
+    spec:
+      containers:
+        - name: simple-web
+          image: yeasy/simple-web:latest
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - name: web
+              containerPort: 80
+          resources:
+            requests:
+              cpu: "0.25"
+              memory: "128Mi"
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: web
+            initialDelaySeconds: 3
+            periodSeconds: 3
+          startupProbe:
+            httpGet:
+              path: /
+              port: web
+            failureThreshold: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: web
+            initialDelaySeconds: 3
+            periodSeconds: 3
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: simple-web
+  namespace: simple-web
+  labels:
+    app: simple-web
+spec:
+  selector:
+   app: simple-web
+  type: LoadBalancer
+  ports:
+   - name: web
+     port: 80
+     protocol: TCP
+     targetPort: web
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: simple-web
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: simple.192.168.222.0
+    http:
+      paths:
+      - backend:
+          service:
+            name: simple-web
+            port:
+              number: 80
+        pathType: ImplementationSpecific
+        path: /

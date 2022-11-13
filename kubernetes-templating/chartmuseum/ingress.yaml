@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: chartmuseum
+  namespace: chartmuseum
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: chartmuseum.192.168.222.2
+    http:
+      paths:
+      - backend:
+          service:
+            name: my-chartmuseum
+            port:
+              number: 8080
+        pathType: ImplementationSpecific
+        path: /

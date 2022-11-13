@@ -1,0 +1,5 @@
+namespace: hipster-shop
+namePrefix: dev-
+metadata:
+  labels:
+    env: dev

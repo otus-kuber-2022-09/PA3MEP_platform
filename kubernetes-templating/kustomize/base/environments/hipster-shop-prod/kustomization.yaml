@@ -1,0 +1,5 @@
+namespace: hipster-shop-prod
+namePrefix: prod-
+metadata:
+  labels:
+    env: prod

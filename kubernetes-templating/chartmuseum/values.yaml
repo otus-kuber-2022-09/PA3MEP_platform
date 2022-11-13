@@ -1,0 +1,14 @@
+apiVersion: networking.k8s.io/v1
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    kubernetes.io/tls-acme: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-staging"
+    cert-manager.io/acme-challenge-type: http01
+    metallb.universe.tf/address-pool: my-pool
+  hosts:
+    - name: chartmuseum.35.228.85.107.nip.io
+      path: /
+      tls: true
+      tlsSecret: chartmuseum.35.228.85.107.nip.io
