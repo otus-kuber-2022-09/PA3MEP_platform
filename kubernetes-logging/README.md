@@ -70,8 +70,9 @@ helm upgrade --install fluent-bit stable/fluent-bit --namespace observability  -
 
 <H2>Установка nginx-ingress</H2>
 
-kubectl create ns nginx-ingress
-helm upgrade --install  nginx-ingress ingress-nginx/ingress-nginx --wait --namespace=nginx-ingress --version=4.3.0 -f nginx-ingress.values.yaml
+helm repo add nginx-stable https://helm.nginx.com/stable 
+helm upgrade --install nginx-ingress stable/nginx-ingress --wait --namespace=nginx-ingress --version=1.41.3 -f nginx-ingress.values.yaml
+helm uninstall nginx-ingress  --wait --namespace=nginx-ingress
 
 helm upgrade --install kibana elastic/kibana --namespace observability -f kibana.values.yaml
 
@@ -96,3 +97,41 @@ helm upgrade --install elasticsearch-exporter prometheus-community/prometheus-el
 
 
 helm upgrade --install elasticsearch-exporter stable/elasticsearch-exporter --set es.uri=http://elasticsearch-master:9200 --set serviceMonitor.enabled=true --namespace=observability
+
+<H2>Loki</H2>
+
+helm repo add loki https://grafana.github.io/loki/charts
+helm repo update
+
+wget https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/master/bundle.yaml
+kubectl create -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/master/bundle.yaml
+
+helm upgrade --install loki loki/loki -n observability
+helm upgrade --install promtail loki/promtail -n observability
+
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack -n observability -f prometheus-operator.values.yaml
+
+
+
+helm uninstall loki loki/loki -n observability
+helm uninstall promtail loki/promtail -n observability
+helm uninstall kube-prometheus-stack prometheus-community/kube-prometheus-stack -n observability
+helm uninstall loki loki/loki-stack -n observability
+
+helm upgrade --install loki loki/loki-stack -n observability
+
+
+
+
+helm repo add loki https://grafana.github.io/loki/charts
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+
+helm upgrade --install loki loki/loki -n observability
+helm upgrade --install promtail loki/promtail --set "loki.serviceName=loki" -n observability
+helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack -n observability -f prometheus-operator.values.yaml
+
+user: admin
+pass: prom-operator
