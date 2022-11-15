@@ -1,0 +1,39 @@
+backend:
+  type: es
+  es:
+    host: elasticsearch-master
+    port: 9200
+    # Elastic Index Name
+    index: kubernetes_cluster
+    type: _doc
+    logstash_prefix: kubernetes_cluster
+    replace_dots: "On"
+    logstash_format: "On"
+    retry_limit: "False"
+    time_key: "@timestamp"
+    # Optional username credential for Elastic X-Pack access
+    http_user:
+    # Password for user defined in HTTP_User
+    http_passwd:
+    # Optional TLS encryption to ElasticSearch instance
+    tls: "off"
+    tls_verify: "on"
+    # TLS certificate for the Elastic (in PEM format). Use if tls=on and tls_verify=on.
+    tls_ca: ""
+    # TLS debugging levels = 1-4
+    tls_debug: 1
+
+rawConfig: |
+  @INCLUDE fluent-bit-service.conf
+  @INCLUDE fluent-bit-input.conf
+  @INCLUDE fluent-bit-filter.conf
+  @INCLUDE fluent-bit-output.conf
+  [FILTER]
+    Name modify
+    Match *
+    Remove time
+    Remove @timestamp
+  
+  
+  
+  

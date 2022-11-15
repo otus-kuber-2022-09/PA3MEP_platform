@@ -1,0 +1,19 @@
+tolerations:
+  - key: node-role
+    operator: Equal
+    value: infra
+    effect: NoSchedule
+
+protocol: http
+
+ingress:
+  enabled: true
+  className: "nginx"
+  pathtype: ImplementationSpecific
+  hosts:
+    - host: kibana.otus.xip.io
+      paths:
+        - path: /
+
+service:
+  type: LoadBalancer
