@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: prometheus
+  labels:
+    app: prometheus
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: "prometheus"
+  labels:
+    app: prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+      - name: prometheus
+        image: prom/prometheus:v2.40.1
+        imagePullPolicy: "IfNotPresent"
+        ports:
+          - name: prometheus-web
+            containerPort: 9090
+        resources:
+          requests:
+            cpu: "0.25"
+            memory: "512Mi"
+          limits:
+            cpu: "1"
+            memory: "2Gi"
+        # livenessProbe:
+        #   httpGet:
+        #     port: web
+        #     path: /
+        #   initialDelaySeconds: 3
+        #   periodSeconds: 3
+        # startupProbe:
+        #   httpGet:
+        #     port: web
+        #     path: /
+        #   failureThreshold: 30
+        #   periodSeconds: 10
+        # readinessProbe:
+        #   httpGet:
+        #     port: web
+        #     path: /
+          # initialDelaySeconds: 3
+          # periodSeconds: 3
+          # failureThreshold: 3
+          # successThreshold: 3
+          # timeoutSeconds: 1
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: "prometheus"
+  labels:
+    app: prometheus
+spec:
+  type: LoadBalancer
+  ports:
+   - name: prometheus-web
+     port: 9090
+     protocol: TCP
+     targetPort: prometheus-web
+  selector:
+   app: prometheus
