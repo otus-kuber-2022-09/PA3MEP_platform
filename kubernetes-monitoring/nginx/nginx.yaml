@@ -14,8 +14,12 @@ metadata:
   namespace: "nginx"
   labels:
     app: nginx
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '9090'
+    prometheus.io/scheme: http
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: nginx
@@ -31,34 +35,13 @@ spec:
         ports:
           - name: web
             containerPort: 80
-        resources:
-          requests:
-            cpu: "0.25"
-            memory: "512Mi"
-          limits:
-            cpu: "0.5"
-            memory: "2Gi"
-        livenessProbe:
-          httpGet:
-            port: web
-            path: /
-          initialDelaySeconds: 3
-          periodSeconds: 3
-        startupProbe:
-          httpGet:
-            port: web
-            path: /
-          failureThreshold: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            port: web
-            path: /
-          initialDelaySeconds: 3
-          periodSeconds: 3
-          failureThreshold: 3
-          successThreshold: 3
-          timeoutSeconds: 1
+      - name: nginx-exporter
+        image: 'nginx/nginx-prometheus-exporter:0.11.0'
+        imagePullPolicy: "IfNotPresent"
+        args:
+          - '-nginx.scrape-uri=http://localhost/basic_status'
+        ports:
+          - containerPort: 9113
 
 ---
 
@@ -69,6 +52,10 @@ metadata:
   namespace: "nginx"
   labels:
     app: nginx
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '9090'
+    prometheus.io/scheme: http
 spec:
   type: LoadBalancer
   ports:

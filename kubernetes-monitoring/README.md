@@ -17,3 +17,10 @@ kubectl delete -f kubernetes-monitoring/nginx/nginx.yaml
 kubectl apply -f kubernetes-monitoring/prometheus.yaml
 
 kubectl delete -f kubernetes-monitoring/prometheus.yaml
+
+
+kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
+
+kubectl apply -f kubernetes-monitoring/ServiceMonitor.yaml
+
+kubectl delete -f kubernetes-monitoring/ServiceMonitor.yaml
