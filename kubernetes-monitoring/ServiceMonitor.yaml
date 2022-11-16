@@ -1,18 +1,19 @@
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
+apiVersion: monitoring.coreos.com/v1 
+kind: ServiceMonitor 
 metadata:
+  name: nginx-metrics
+  namespace: nginx # namespace where prometheus is running
   labels:
-    serviceMonitorSelector: prometheus
-  name: prometheus
-  namespace: prometheus
+    app: nginx
 spec:
-  endpoints:
-  - interval: 10s
-    targetPort: 9090
-    path: /metrics
-  namespaceSelector:
-    matchNames:
-    - nginx
   selector:
     matchLabels:
-      app: "nginx"
+      app: nginx # same as above
+  endpoints:
+  - interval: 10s # scrape interval
+    path: /basic_status # path to scrape
+    port: web # named port in target app
+  namespaceSelector:
+    matchNames:
+    - nginx # namespace where the app is running
+
