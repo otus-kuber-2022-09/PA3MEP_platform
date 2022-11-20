@@ -18,9 +18,8 @@ metadata:
   annotations:
     prometheus.io/scrape: 'true'
     prometheus.io/port: '9113'
-    prometheus.io/scheme: http
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: nginx
@@ -36,11 +35,19 @@ spec:
         ports:
           - name: web
             containerPort: 80
+        resources:
+            limits:
+              memory: 128Mi
+              cpu: 500m
       - name: nginx-exporter
         image: 'nginx/nginx-prometheus-exporter:0.11.0'
         imagePullPolicy: "IfNotPresent"
         args:
           - '-nginx.scrape-uri=http://localhost/basic_status'
+        resources:
+            limits:
+              memory: 128Mi
+              cpu: 500m
         ports:
           - containerPort: 9113
 
@@ -60,9 +67,13 @@ metadata:
 spec:
   type: LoadBalancer
   ports:
-   - name: web
-     port: 80
-     protocol: TCP
-     targetPort: web
+  - name: web
+    port: 80
+    protocol: TCP
+    targetPort: web
+  - name: mon
+    port: 8080
+    protocol: TCP
+    targetPort: 9113   
   selector:
    app: nginx

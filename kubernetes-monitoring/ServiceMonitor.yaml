@@ -11,9 +11,9 @@ spec:
       app: nginx # same as above
   endpoints:
   - interval: 10s # scrape interval
-    path: /basic_status # path to scrape
-    port: web # named port in target app
+    path: /metrics # path to scrape
+    port: mon # named port in target app
   namespaceSelector:
     matchNames:
-    - nginx # namespace where the app is running
+    -  nginx # namespace where the app is running
 
