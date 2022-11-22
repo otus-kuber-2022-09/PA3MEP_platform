@@ -136,4 +136,5 @@ ts=2022-11-22T17:53:39.791761524Z caller=release.go:364 component=release releas
 <H2>Самостоятельное задание</H2>
 
 ![](img/DeployAllServices.png)
+![](img/DeployAllServices2.png)
 
