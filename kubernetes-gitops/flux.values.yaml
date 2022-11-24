@@ -1,5 +1,5 @@
 git:
-  url: git@gitlab.com:otus43/microservices-demo.git
+  url: git@gitlab.com:otus43/infra.git
   branch: main
   path: deploy
   ciSkip: true	

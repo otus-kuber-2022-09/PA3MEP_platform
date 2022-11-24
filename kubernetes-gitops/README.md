@@ -138,3 +138,145 @@ ts=2022-11-22T17:53:39.791761524Z caller=release.go:364 component=release releas
 ![](img/DeployAllServices.png)
 ![](img/DeployAllServices2.png)
 
+<H2>Неожиданно нашлась ошибочка</H2>
+Не запускается cartservice deployment. Как бы вообще. Начал копать. Нашёл что helm-operator ругается
+
+<pre><code>
+kubectl logs helm-operator-55769d46b8-mq28t -n flux -f | grep cartservice
+
+ts=2022-11-24T15:41:36.779011235Z caller=release.go:79 component=release release=cartservice targetNamespace=microservices-demo resource=microservices-demo:helmrelease/cartservice helmVersion=v3 info="starting sync run"
+
+ts=2022-11-24T15:41:37.511471555Z caller=release.go:85 component=release release=cartservice targetNamespace=microservices-demo resource=microservices-demo:helmrelease/cartservice helmVersion=v3 error="failed to prepare chart for release: no cached repository for helm-manager-1067d9c6027b8c3f27b49e40521d64be96ea412858d8e45064fa44afd3966ddc found. (try 'helm repo update'): open /root/.cache/helm/repository/helm-manager-1067d9c6027b8c3f27b49e40521d64be96ea412858d8e45064fa44afd3966ddc-index.yaml: no such file or directory"
+</pre></code>
+
+В итоге удалось упоминание о подобной проблеме на великом stackoverflow
+
+https://stackoverflow.com/questions/69366467/updating-helm-subcharts-fails-without-a-clear-error
+
+Требовалось заменить 
+
+<pre><code>
+dependencies:
+- name: redis
+  version: 10.2.1
+  repository: "https://kubernetes-charts.storage.googleapis.com/"
+</pre></code>
+
+на
+<pre><code>
+dependencies:
+- name: redis
+  version: 10.2.1
+  repository: "https://charts.helm.sh/stable"
+</pre></code>
+
+И после этого появились ПОДы
+
+<pre><code>
+cartservice-547745cbfc-9z6kr             2/2     Running   0          21m
+cartservice-redis-master-0               2/2     Running   0          21m
+</pre></code>
+
+Так же после этого пропала ошибка в ВЕБ интерфэйсе Frontend, которая говорила о том что cartservice не доступен, ну и как заключение корректно заработал LoadGenerator который до сих пор был застрявший в статусе Init видимо потому что не отрабатовал readness check, направленный на Frontend
+
+<pre><code>
+kubectl get pods -n microservices-demo
+NAME                                     READY   STATUS    RESTARTS   AGE
+adservice-5f6cc88676-xbt4f               2/2     Running   0          93m
+cartservice-547745cbfc-9z6kr             2/2     Running   0          21m
+cartservice-redis-master-0               2/2     Running   0          21m
+checkoutservice-7f859d9856-vhp5g         2/2     Running   0          87m
+currencyservice-77997b9c5d-mnj2x         2/2     Running   0          84m
+emailservice-7bdbb56f96-5pbnk            2/2     Running   0          83m
+frontend-6cc46fd498-755rp                2/2     Running   0          28h
+loadgenerator-7989595f7d-sfgjv           2/2     Running   0          156m
+paymentservice-58f6c8b5c4-g5cl5          2/2     Running   0          79m
+productcatalogservice-5d5846dd54-v5fl2   2/2     Running   0          77m
+recommendationservice-8544968cb6-rntqb   2/2     Running   0          75m
+shippingservice-8566755f88-9xln8         2/2     Running   0          73m
+</pre></code>
+
+<H2>Canary deployments с Flagger и Istio</H2>
+
+Deploy the Istio operator
+
+istioctl operator init
+istioctl operator init --watchedNamespaces=microservices-demo
+
+kubectl apply -f IstioOperator.yaml
+
+kubectl get IstioOperator -A
+NAMESPACE            NAME                                   REVISION   STATUS    AGE
+microservices-demo   microservices-demo-istiocontrolplane              HEALTHY   44s
+
+kubectl get all -n istio-system
+NAME                                        READY   STATUS    RESTARTS   AGE
+pod/istio-egressgateway-d84b5f89f-l59zl     1/1     Running   0          100s
+pod/istio-ingressgateway-869ccf7495-5clg6   1/1     Running   0          100s
+pod/istiod-689fd979b-l5fwf                  1/1     Running   0          109s
+
+NAME                           TYPE           CLUSTER-IP     EXTERNAL-IP    PORT(S)                                                                      AGE
+service/istio-egressgateway    ClusterIP      10.36.3.55     <none>         80/TCP,443/TCP                                                               100s
+service/istio-ingressgateway   LoadBalancer   10.36.2.42     34.88.11.182   15021:31331/TCP,80:31249/TCP,443:31114/TCP,31400:32019/TCP,15443:30475/TCP   100s
+service/istiod                 ClusterIP      10.36.11.120   <none>         15010/TCP,15012/TCP,443/TCP,15014/TCP                                        109s
+
+NAME                                   READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/istio-egressgateway    1/1     1            1           100s
+deployment.apps/istio-ingressgateway   1/1     1            1           100s
+deployment.apps/istiod                 1/1     1            1           109s
+
+NAME                                              DESIRED   CURRENT   READY   AGE
+replicaset.apps/istio-egressgateway-d84b5f89f     1         1         1       100s
+replicaset.apps/istio-ingressgateway-869ccf7495   1         1         1       100s
+replicaset.apps/istiod-689fd979b                  1         1         1       109s
+
+<H2>Установка Flagger</H2>
+
+helm repo add flagger https://flagger.app
+kubectl apply -f https://raw.githubusercontent.com/weaveworks/flagger/master/artifacts/flagger/crd.yaml
+
+helm upgrade --install flagger flagger/flagger --namespace=istio-system --set crd.create=false --set meshProvider=istio --set metricsServer=http://prometheus:9090
+
+<H2>Istio | Sidecar Injection</H2>
+kubectl get ns microservices-demo --show-labels
+NAME                 STATUS   AGE   LABELS
+microservices-demo   Active   26h   fluxcd.io/sync-gc-mark=sha256.W_6VLRYgbwbK-GO3AOYggq9aT5JxXxCSLVsQgCg7kq4,istio-injection=enabled,kubernetes.io/metadata.name=microservices-demo
+
+kubectl describe pod -l app=frontend -n microservices-demo
+Containers:
+  server:
+    Container ID:   containerd://59a91ae04eb3bc4ccee88364670f7b99c28ef53871cedecaf9afaed872c9cd8e
+    Image:          pa3mep/frontend:v0.0.2
+    Image ID:       docker.io/pa3mep/frontend@sha256:a24767d32f0f0cab3315efdbda24489dd66a001e69cd83e3dfbcde8f9ffd4b34
+  istio-proxy:
+    Container ID:  containerd://dd1527fffd18ad725948bf3f502f4f2ea05970c3f8dbeab165b0a76a36296a7a
+    Image:         docker.io/istio/proxyv2:1.16.0
+    Image ID:      docker.io/istio/proxyv2@sha256:f6f97fa4fb77a3cbe1e3eca0fa46bd462ad6b284c129cf57bf91575c4fb50cf9
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  11m   default-scheduler  Successfully assigned microservices-demo/frontend-6cc46fd498-755rp to gke-otus-gitops-default-pool-b7860ba6-9tcl
+  Normal  Pulled     11m   kubelet            Container image "docker.io/istio/proxyv2:1.16.0" already present on machine
+  Normal  Created    11m   kubelet            Created container istio-init
+  Normal  Started    11m   kubelet            Started container istio-init
+  Normal  Pulling    11m   kubelet            Pulling image "pa3mep/frontend:v0.0.2"
+  Normal  Pulled     11m   kubelet            Successfully pulled image "pa3mep/frontend:v0.0.2" in 9.131442395s
+  Normal  Created    11m   kubelet            Created container server
+  Normal  Started    11m   kubelet            Started container server
+  Normal  Pulled     11m   kubelet            Container image "docker.io/istio/proxyv2:1.16.0" already present on machine
+  Normal  Created    11m   kubelet            Created container istio-proxy
+  Normal  Started    11m   kubelet            Started container istio-proxy
+
+
+<H2>Доступ к frontend</H2>
+
+kubectl get gateway -n microservices-demo
+NAME               AGE
+frontend           28h
+frontend-gateway   28h
+
+kubectl get virtualservice -n microservices-demo
+NAME       GATEWAYS       HOSTS   AGE
+frontend   ["frontend"]   ["*"]   28h
+
+<H2>Flagger | Canary</H2>
