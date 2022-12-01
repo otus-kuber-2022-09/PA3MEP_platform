@@ -95,6 +95,16 @@ kubectl create namespace flux
 helm upgrade --install flux fluxcd/flux -f flux.values.yaml --namespace flux
 </pre></code>
 
+Flux v1 depricated и работает не корректно. Перейдём на версию 2
+<pre><code>
+cd flux2
+wget https://fluxcd.io/install.sh
+chmod u+x install.sh
+./install.sh
+export GITLAB_TOKEN="glpat--_rsAfF48UjFmcyZ529p"
+flux bootstrap gitlab --components-extra=image-reflector-controller,image-automation-controller --owner=otus43 --repository=Infra --branch=main --path=deploy/releases --token-auth --personal
+</pre></code>
+
 <H2>Установка Helm operator</H2>
 <pre><code>
 helm upgrade --install helm-operator fluxcd/helm-operator -f helm-operator.values.yaml --namespace flux
@@ -200,6 +210,7 @@ shippingservice-8566755f88-9xln8         2/2     Running   0          73m
 
 Deploy the Istio operator
 
+<pre><code>
 istioctl operator init
 istioctl operator init --watchedNamespaces=microservices-demo
 
@@ -229,15 +240,20 @@ NAME                                              DESIRED   CURRENT   READY   AG
 replicaset.apps/istio-egressgateway-d84b5f89f     1         1         1       100s
 replicaset.apps/istio-ingressgateway-869ccf7495   1         1         1       100s
 replicaset.apps/istiod-689fd979b                  1         1         1       109s
+</pre></code>
 
 <H2>Установка Flagger</H2>
 
+<pre><code>
 helm repo add flagger https://flagger.app
 kubectl apply -f https://raw.githubusercontent.com/weaveworks/flagger/master/artifacts/flagger/crd.yaml
 
-helm upgrade --install flagger flagger/flagger --namespace=istio-system --set crd.create=false --set meshProvider=istio --set metricsServer=http://prometheus:9090
+helm upgrade --install flagger flagger/flagger --namespace=istio-system --set crd.create=false --set meshProvider=istio --set metricsServer=http://10.32.0.35:9090
+</pre></code>
 
 <H2>Istio | Sidecar Injection</H2>
+
+<pre><code>
 kubectl get ns microservices-demo --show-labels
 NAME                 STATUS   AGE   LABELS
 microservices-demo   Active   26h   fluxcd.io/sync-gc-mark=sha256.W_6VLRYgbwbK-GO3AOYggq9aT5JxXxCSLVsQgCg7kq4,istio-injection=enabled,kubernetes.io/metadata.name=microservices-demo
@@ -266,10 +282,11 @@ Events:
   Normal  Pulled     11m   kubelet            Container image "docker.io/istio/proxyv2:1.16.0" already present on machine
   Normal  Created    11m   kubelet            Created container istio-proxy
   Normal  Started    11m   kubelet            Started container istio-proxy
-
+</pre></code>
 
 <H2>Доступ к frontend</H2>
 
+<pre><code>
 kubectl get gateway -n microservices-demo
 NAME               AGE
 frontend           28h
@@ -278,5 +295,54 @@ frontend-gateway   28h
 kubectl get virtualservice -n microservices-demo
 NAME       GATEWAYS       HOSTS   AGE
 frontend   ["frontend"]   ["*"]   28h
+</pre></code>
 
 <H2>Flagger | Canary</H2>
+
+После установки Flagger наблюдаеми следующие PODы в namespace istio-system
+
+<pre><code>
+kubectl get pods -n istio-system
+NAME                                    READY   STATUS    RESTARTS   AGE
+flagger-5c5f959bfb-5lvwl                1/1     Running   0          118s
+istio-egressgateway-d84b5f89f-l59zl     1/1     Running   0          7d23h
+istio-ingressgateway-869ccf7495-5clg6   1/1     Running   0          7d23h
+istiod-689fd979b-l5fwf                  1/1     Running   0          7d23h
+</pre></code>
+
+и в namespace microservices-demo
+
+<pre><code>
+kubectl get pods -n microservices-demo
+NAME                                     READY   STATUS    RESTARTS   AGE
+adservice-774b47cd55-qrrb7               2/2     Running   0          43h
+cartservice-77887657c6-gtg2x             2/2     Running   0          43h
+cartservice-redis-master-0               2/2     Running   0          6d19h
+checkoutservice-54ccdd8945-ptghf         2/2     Running   0          43h
+currencyservice-6b94f8b745-x2frz         2/2     Running   0          43h
+emailservice-5dc6958455-5zwx9            2/2     Running   0          43h
+frontend-primary-77ccc68b49-7h88v        2/2     Running   0          2m43s
+loadgenerator-8d9b575d7-l7gv5            2/2     Running   0          43h
+paymentservice-b9fddddb5-pjtmx           2/2     Running   0          43h
+productcatalogservice-5dfd45fd8c-tbslr   2/2     Running   0          43h
+recommendationservice-6fb8cbfc6f-5v94j   2/2     Running   0          43h
+shippingservice-67b5fd5-x4mn6            2/2     Running   0          43h
+</pre></code>
+
+Заметим что ПОД frontend у нас теперь с суфиксом primary что означает актуальную версию
+Теперь создадим следующую версию и посмотрим что произойдёт.
+Через некоторое время появился POD frontend-6c4859cbff-bksjp который представляет нашу новую версию
+
+<pre><code>
+NAME                                     READY   STATUS    RESTARTS   AGE
+frontend-6c4859cbff-bksjp                1/2     Running   0          9s
+frontend-primary-77ccc68b49-7h88v        2/2     Running   0          10m
+</pre></code>
+
+И через некоторое время старая версия была удалена и новая переименована в 
+
+<pre><code>
+frontend-primary-6f658d984b-d2mh6        2/2     Running   0          14m
+</pre></code>
+
+Можно заметить что хэш ПОДа остался, просто к имени добавился суффикс primary
