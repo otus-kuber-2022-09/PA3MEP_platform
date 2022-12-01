@@ -353,3 +353,131 @@ kubectl get canaries -n microservices-demo -o wide
 NAME       STATUS      WEIGHT   FAILEDCHECKS   INTERVAL   MIRROR   STEPWEIGHT   STEPWEIGHTS   MAXWEIGHT   LASTTRANSITIONTIME
 frontend   Succeeded   0        0              30s                                                        2022-12-01T14:44:30Z
 </pre></code>
+
+ kubectl describe canary -n microservices-demo frontend
+
+<pre><code>
+Name:         frontend
+Namespace:    microservices-demo
+Labels:       app.kubernetes.io/managed-by=Helm
+Annotations:  helm.fluxcd.io/antecedent: microservices-demo:helmrelease/frontend
+              meta.helm.sh/release-name: frontend
+              meta.helm.sh/release-namespace: microservices-demo
+API Version:  flagger.app/v1beta1
+Kind:         Canary
+Metadata:
+  Creation Timestamp:  2022-11-30T18:19:02Z
+  Generation:          1
+  Managed Fields:
+    API Version:  flagger.app/v1beta1
+    Fields Type:  FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          .:
+          f:meta.helm.sh/release-name:
+          f:meta.helm.sh/release-namespace:
+        f:labels:
+          .:
+          f:app.kubernetes.io/managed-by:
+      f:spec:
+        .:
+        f:analysis:
+          .:
+          f:interval:
+          f:iterations:
+          f:threshold:
+        f:provider:
+        f:service:
+          .:
+          f:gateways:
+          f:hosts:
+          f:port:
+          f:targetPort:
+        f:targetRef:
+          .:
+          f:apiVersion:
+          f:kind:
+          f:name:
+    Manager:      helm-operator
+    Operation:    Update
+    Time:         2022-11-30T18:19:02Z
+    API Version:  flagger.app/v1beta1
+    Fields Type:  FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          f:helm.fluxcd.io/antecedent:
+    Manager:      kubectl-annotate
+    Operation:    Update
+    Time:         2022-11-30T18:19:03Z
+    API Version:  flagger.app/v1beta1
+    Fields Type:  FieldsV1
+    fieldsV1:
+      f:status:
+        .:
+        f:canaryWeight:
+        f:conditions:
+        f:failedChecks:
+        f:iterations:
+        f:lastAppliedSpec:
+        f:lastPromotedSpec:
+        f:lastTransitionTime:
+        f:phase:
+        f:trackedConfigs:
+    Manager:         flagger
+    Operation:       Update
+    Subresource:     status
+    Time:            2022-12-01T14:27:31Z
+  Resource Version:  7758033
+  UID:               0c94b34c-0b84-42ff-aca6-ba370a5daf44
+Spec:
+  Analysis:
+    Interval:    30s
+    Iterations:  10
+    Threshold:   5
+  Provider:      istio
+  Service:
+    Gateways:
+      frontend
+    Hosts:
+      *
+    Port:         80
+    Target Port:  8080
+  Target Ref:
+    API Version:  apps/v1
+    Kind:         Deployment
+    Name:         frontend
+Status:
+  Canary Weight:  0
+  Conditions:
+    Last Transition Time:  2022-12-01T14:44:30Z
+    Last Update Time:      2022-12-01T14:44:30Z
+    Message:               Canary analysis completed successfully, promotion finished.
+    Reason:                Succeeded
+    Status:                True
+    Type:                  Promoted
+  Failed Checks:           0
+  Iterations:              0
+  Last Applied Spec:       c5d989d84
+  Last Promoted Spec:      c5d989d84
+  Last Transition Time:    2022-12-01T14:44:30Z
+  Phase:                   Succeeded
+  Tracked Configs:
+Events:
+  Type     Reason  Age                From     Message
+  ----     ------  ----               ----     -------
+  Warning  Synced  40m                flagger  frontend-primary.microservices-demo not ready: waiting for rollout to finish: observed deployment generation less than desired generation
+  Normal   Synced  40m (x2 over 40m)  flagger  all the metrics providers are available!
+  Normal   Synced  40m                flagger  Initialization done! frontend.microservices-demo
+  Normal   Synced  30m                flagger  New revision detected! Scaling up frontend.microservices-demo
+  Normal   Synced  29m                flagger  Starting canary analysis for frontend.microservices-demo
+  Normal   Synced  29m                flagger  Advance frontend.microservices-demo canary iteration 1/10
+  Normal   Synced  29m                flagger  Advance frontend.microservices-demo canary iteration 2/10
+  Normal   Synced  28m                flagger  Advance frontend.microservices-demo canary iteration 3/10
+  Normal   Synced  28m                flagger  Advance frontend.microservices-demo canary iteration 4/10
+  Normal   Synced  27m                flagger  Advance frontend.microservices-demo canary iteration 5/10
+  Normal   Synced  23m (x9 over 27m)  flagger  (combined from similar events): Promotion completed! Scaling down frontend.microservices-demo
+
+
+  <pre><code>
