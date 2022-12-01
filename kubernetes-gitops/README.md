@@ -346,3 +346,10 @@ frontend-primary-6f658d984b-d2mh6        2/2     Running   0          14m
 </pre></code>
 
 Можно заметить что хэш ПОДа остался, просто к имени добавился суффикс primary
+
+<pre><code>
+kubectl get canaries -n microservices-demo -o wide
+
+NAME       STATUS      WEIGHT   FAILEDCHECKS   INTERVAL   MIRROR   STEPWEIGHT   STEPWEIGHTS   MAXWEIGHT   LASTTRANSITIONTIME
+frontend   Succeeded   0        0              30s                                                        2022-12-01T14:44:30Z
+</pre></code>
