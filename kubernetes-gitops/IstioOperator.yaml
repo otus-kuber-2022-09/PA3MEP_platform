@@ -1,0 +1,7 @@
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  namespace: microservices-demo
+  name: microservices-demo-istiocontrolplane
+spec:
+  profile: demo

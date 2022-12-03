@@ -1,0 +1,155 @@
+stages:
+  - adservice_build
+  - frontend_build
+  - cartservice_build
+  - checkoutservice_build
+  - currencyservice_build
+  - emailservice_build
+  - loadgenerator_build
+  - paymentservice_build
+  - productcatalogservice_build
+  - recommendationservice_build
+  - shippingservice_build
+
+frontend_build:
+  image: docker:latest
+  stage: frontend_build
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - cd src/frontend
+    - docker build -t $CI_FRONTEND_IMAGE:$CI_COMMIT_TAG .
+    - echo "Compile complete."
+    - docker push "$CI_FRONTEND_IMAGE:$CI_COMMIT_TAG"
+
+adservice_build:
+  image: docker:latest
+  stage: adservice_build
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - cd src/adservice
+    - docker build -t $CI_ADSERVICE_IMAGE:$CI_COMMIT_TAG .
+    - echo "Compile complete."
+    - docker push "$CI_ADSERVICE_IMAGE:$CI_COMMIT_TAG"
+
+cartservice_build:
+  image: docker:latest
+  stage: cartservice_build
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - cd src/cartservice/src
+    - docker build -t $CI_CARDSERVICE_IMAGE:$CI_COMMIT_TAG .
+    - echo "Compile complete."
+    - docker push "$CI_CARDSERVICE_IMAGE:$CI_COMMIT_TAG"
+
+checkoutservice_build:
+  image: docker:latest
+  stage: checkoutservice_build
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - cd src/checkoutservice
+    - docker build -t $CI_CHECKOUTSERVICE_IMAGE:$CI_COMMIT_TAG .
+    - echo "Compile complete."
+    - docker push "$CI_CHECKOUTSERVICE_IMAGE:$CI_COMMIT_TAG"
+
+currencyservice_build:
+  image: docker:latest
+  stage: currencyservice_build
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - cd src/currencyservice
+    - docker build -t $CI_CURRENCYSERVICE_IMAGE:$CI_COMMIT_TAG .
+    - echo "Compile complete."
+    - docker push "$CI_CURRENCYSERVICE_IMAGE:$CI_COMMIT_TAG"
+
+emailservice_build:
+  image: docker:latest
+  stage: emailservice_build
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - cd src/emailservice
+    - docker build -t $CI_EMAILSERVICE_IMAGE:$CI_COMMIT_TAG .
+    - echo "Compile complete."
+    - docker push "$CI_EMAILSERVICE_IMAGE:$CI_COMMIT_TAG"
+
+loadgenerator_build:
+  image: docker:latest
+  stage: loadgenerator_build
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - cd src/loadgenerator
+    - docker build -t $CI_LOADGENERATOR_IMAGE:$CI_COMMIT_TAG .
+    - echo "Compile complete."
+    - docker push "$CI_LOADGENERATOR_IMAGE:$CI_COMMIT_TAG"
+
+paymentservice_build:
+  image: docker:latest
+  stage: paymentservice_build
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - cd src/paymentservice
+    - docker build -t $CI_PAYMENTSERVICE_IMAGE:$CI_COMMIT_TAG .
+    - echo "Compile complete."
+    - docker push "$CI_PAYMENTSERVICE_IMAGE:$CI_COMMIT_TAG"
+
+productcatalogservice_build:
+  image: docker:latest
+  stage: productcatalogservice_build
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - cd src/productcatalogservice
+    - docker build -t $CI_PRODUCTCATALOGSERVICE_IMAGE:$CI_COMMIT_TAG .
+    - echo "Compile complete."
+    - docker push "$CI_PRODUCTCATALOGSERVICE_IMAGE:$CI_COMMIT_TAG"
+
+recommendationservice_build:
+  image: docker:latest
+  stage: recommendationservice_build
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - cd src/recommendationservice
+    - docker build -t $CI_RECOMMENDATIONSERVICE_IMAGE:$CI_COMMIT_TAG .
+    - echo "Compile complete."
+    - docker push "$CI_RECOMMENDATIONSERVICE_IMAGE:$CI_COMMIT_TAG"
+
+shippingservice_build:
+  image: docker:latest
+  stage: shippingservice_build
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - cd src/shippingservice
+    - docker build -t $CI_SHIPPINGSERVICE_IMAGE:$CI_COMMIT_TAG .
+    - echo "Compile complete."
+    - docker push "$CI_SHIPPINGSERVICE_IMAGE:$CI_COMMIT_TAG"
