@@ -183,4 +183,41 @@ kubectl exec -it $MYSQLPOD -- mysql -potuspassword -e "select * from test;" otus
 |  2 | some data-2 |
 +----+-------------+
 
+<H2>Построим докер образ</H2>
 
+cd build
+docker build -t pa3mep/mysql-operator:v0.0.1 .
+
+docker login -u pa3mep -p "....." docker.io
+docker push pa3mep/mysql-operator:v0.0.1
+
+<H2>Деплой оператора</H2>
+
+kubectl apply -f deploy/service-account.yml
+kubectl apply -f deploy/role.yml
+kubectl apply -f deploy/role-binding.yml
+kubectl apply -f deploy/deploy-operator.yml
+
+kubectl apply -f deploy/cr.yml
+
+<H2>Проверим, что все работает</H2>
+kubectl get pvc
+
+NAME                 STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+mysql-instance-pvc   Bound    pvc-9bab514d-751a-4a37-b7a8-af30f6268c28   1Gi        RWO            standard       9h
+
+export MYSQLPOD=$(kubectl get pods -l app=mysql-instance -o jsonpath="{.items[*].metadata.name}")
+kubectl exec -it $MYSQLPOD -- mysql -u root -potuspassword -e "CREATE TABLE test ( id smallint unsigned not null auto_increment, name varchar(20) not null, constraint pk_example primary key (id) );" otus-database
+
+kubectl exec -it $MYSQLPOD -- mysql -potuspassword -e "INSERT INTO test ( id, name ) VALUES (null, 'some data' );" otus-database
+kubectl exec -it $MYSQLPOD -- mysql -potuspassword -e "INSERT INTO test ( id, name ) VALUES (null, 'some data-2' );" otus-database
+
+kubectl exec -it $MYSQLPOD -- mysql -potuspassword -e "select * from test;" otus-database
+
+Удалим mysql-instance
+
+kubectl delete mysqls.otus.homework mysql-instance
+
+kubectl get jobs.batch
+NAME                         COMPLETIONS   DURATION   AGE
+restore-mysql-instance-job   1/1           3s         3m15s
