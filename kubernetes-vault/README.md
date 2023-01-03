@@ -5,36 +5,37 @@
 
 <pre><code>
 kubectl get nodes
-NAME           STATUS   ROLES                  AGE     VERSION
-kubik-master   Ready    control-plane,master   10m     v1.23.15
-kubik-node-1   Ready    <none>                 9m6s    v1.23.15
-kubik-node-2   Ready    <none>                 8m57s   v1.23.15
+NAME        STATUS   ROLES           AGE   VERSION
+kube-mgr    Ready    control-plane   35d   v1.25.4
+kube-min1   Ready    <none>          14m   v1.25.4
+kube-min2   Ready    <none>          14m   v1.25.4
 </pre></code>
 
 Состояние подов
 
 <pre><code>
 kubectl get pods -A
-NAMESPACE     NAME                                   READY   STATUS    RESTARTS   AGE
-kube-system   coredns-bd6b6df9f-httbv                1/1     Running   0          11m
-kube-system   coredns-bd6b6df9f-ndj9n                1/1     Running   0          11m
-kube-system   etcd-kubik-master                      1/1     Running   0          11m
-kube-system   kube-apiserver-kubik-master            1/1     Running   0          11m
-kube-system   kube-controller-manager-kubik-master   1/1     Running   0          11m
-kube-system   kube-proxy-hcvnm                       1/1     Running   0          11m
-kube-system   kube-proxy-vzh9h                       1/1     Running   0          9m48s
-kube-system   kube-proxy-wt97g                       1/1     Running   0          9m57s
-kube-system   kube-scheduler-kubik-master            1/1     Running   0          11m
-kube-system   weave-net-2lmr6                        2/2     Running   0          7m29s
-kube-system   weave-net-lbt8p                        2/2     Running   0          7m29s
-kube-system   weave-net-zjwm8                        2/2     Running   0          7m29s
+NAMESPACE     NAME                               READY   STATUS    RESTARTS      AGE
+kube-system   coredns-58ff9bfdfc-fqjk5           1/1     Running   0             35d
+kube-system   coredns-58ff9bfdfc-zhvch           1/1     Running   0             35d
+kube-system   etcd-kube-mgr                      1/1     Running   2 (42m ago)   35d
+kube-system   kube-apiserver-kube-mgr            1/1     Running   2 (42m ago)   35d
+kube-system   kube-controller-manager-kube-mgr   1/1     Running   2 (42m ago)   35d
+kube-system   kube-proxy-gq5qz                   1/1     Running   0             14m
+kube-system   kube-proxy-nnxw7                   1/1     Running   0             14m
+kube-system   kube-proxy-qz6w8                   1/1     Running   2 (42m ago)   35d
+kube-system   kube-scheduler-kube-mgr            1/1     Running   2 (42m ago)   35d
+kube-system   weave-net-rcpfz                    2/2     Running   0             12m
+kube-system   weave-net-rfd8c                    2/2     Running   0             12m
+kube-system   weave-net-x84bc                    2/2     Running   0             12m
 </pre></code>
 
 <H2>Инсталляция hashicorp vault HA в k8s</H2>
 
-kubectl apply -f consul-storage-class.yamlcd
+kubectl apply -f consul-storage-class.yaml
 
 git clone https://github.com/hashicorp/consul-k8s.git
+git clone https://github.com/hashicorp/vault-helm.git
 
 cd consul-k8s/charts/consul
 helm install consul .
