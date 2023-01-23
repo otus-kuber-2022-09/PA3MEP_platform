@@ -42,14 +42,24 @@ helm install consul .
 
 helm repo add hashicorp https://helm.releases.hashicorp.com
 helm repo update
+
+kubectl apply -f consul-pv-pvc.yaml
 helm upgrade --install consul hashicorp/consul
+
+helm uninstall consul
+kubectl delete -f consul-pv-pvc.yaml
+
+data-<kubernetes namespace>-<release name>-consul-server-<ordinal>
+
+data-vault-consul-consul-server-0
 
 git clone https://github.com/hashicorp/vault-helm.git
 
 <H2>Установим vault</H2>
 <pre><code>
 cd vault-helm/
-helm install vault .
+helm install vault . --values=values.yaml
+helm uninstall vault
 </pre></code>
 
 
