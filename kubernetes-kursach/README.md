@@ -20,17 +20,17 @@ CI Pipeline: https://gitlab.com/otus43/microservices-demo/-/pipelines
 
 Репозитории ДокерХаб: 
 
-https://hub.docker.com/repository/docker/pa3mep/adservice
-https://hub.docker.com/repository/docker/pa3mep/frontend/general
-https://hub.docker.com/repository/docker/pa3mep/cartservice/general
-https://hub.docker.com/repository/docker/pa3mep/checkoutservice/general
-https://hub.docker.com/repository/docker/pa3mep/currencyservice/general
-https://hub.docker.com/repository/docker/pa3mep/emailservice/general
-https://hub.docker.com/repository/docker/pa3mep/loadgenerator/general
-https://hub.docker.com/repository/docker/pa3mep/paymentservice/general
-https://hub.docker.com/repository/docker/pa3mep/productcatalogservice/general
-https://hub.docker.com/repository/docker/pa3mep/recommendationservice/general
-https://hub.docker.com/repository/docker/pa3mep/shippingservice/general
+https://hub.docker.com/repository/docker/pa3mep/adservice<br>
+https://hub.docker.com/repository/docker/pa3mep/frontend/general<br>
+https://hub.docker.com/repository/docker/pa3mep/cartservice/general<br>
+https://hub.docker.com/repository/docker/pa3mep/checkoutservice/general<br>
+https://hub.docker.com/repository/docker/pa3mep/currencyservice/general<br>
+https://hub.docker.com/repository/docker/pa3mep/emailservice/general<br>
+https://hub.docker.com/repository/docker/pa3mep/loadgenerator/general<br>
+https://hub.docker.com/repository/docker/pa3mep/paymentservice/general<br>
+https://hub.docker.com/repository/docker/pa3mep/productcatalogservice/general<br>
+https://hub.docker.com/repository/docker/pa3mep/recommendationservice/general<br>
+https://hub.docker.com/repository/docker/pa3mep/shippingservice/general<br>
 
 <H2>Запустить ХипстерШоп с помошью Flux</H2>
 <H3>Настроить кластер Кубернетеса</H3>
@@ -122,3 +122,36 @@ sudo route add -net 10.98.88.0/24 gw 192.168.196.134
 </pre></code>
 
 где 10.98.88.0 подсеть EXTERNAL-IP
+
+<H3>Запустить Flux</H3>
+
+Устанавливаем Helm Operator
+<pre><code>
+kubectl apply -f https://raw.githubusercontent.com/fluxcd/helm-operator/master/deploy/crds.yaml
+</pre></code>
+
+Устанавливаем Flux 2
+<pre><code>
+mkdir flux2
+cd flux2
+wget https://fluxcd.io/install.sh
+chmod u+x install.sh
+./install.sh
+</pre></code>
+
+Привязываем Flux к репозиторию Infra
+<pre><code>
+export GITLAB_TOKEN="glpat--_rsAfF48UjFmcyZ529p"
+flux bootstrap gitlab --components-extra=image-reflector-controller,image-automation-controller --owner=otus43 --repository=Infra --branch=main --path=deploy/releases --token-auth --personal
+</pre></code>
+
+Установка Helm operator
+<pre><code>
+helm upgrade --install helm-operator fluxcd/helm-operator -f helm-operator.values.yaml --namespace flux
+</pre></code>
+
+Устоновим Service monitor
+<pre><code>
+LATEST=$(curl -s https://api.github.com/repos/prometheus-operator/prometheus-operator/releases/latest | jq -cr .tag_name)
+curl -sL https://github.com/prometheus-operator/prometheus-operator/releases/download/${LATEST}/bundle.yaml | kubectl create -f -
+</pre></code>
