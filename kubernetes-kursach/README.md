@@ -125,11 +125,6 @@ sudo route add -net 10.98.88.0/24 gw 192.168.196.134
 
 <H3>Запустить Flux</H3>
 
-Устанавливаем Helm Operator
-<pre><code>
-kubectl apply -f https://raw.githubusercontent.com/fluxcd/helm-operator/master/deploy/crds.yaml
-</pre></code>
-
 Устанавливаем Flux 2
 <pre><code>
 mkdir flux2
@@ -139,15 +134,56 @@ chmod u+x install.sh
 ./install.sh
 </pre></code>
 
-Привязываем Flux к репозиторию Infra
+Привязываем Flux2 к репозиторию Infra
 <pre><code>
 export GITLAB_TOKEN="glpat--_rsAfF48UjFmcyZ529p"
-flux bootstrap gitlab --components-extra=image-reflector-controller,image-automation-controller --owner=otus43 --repository=Infra --branch=main --path=deploy/releases --token-auth --personal
+flux bootstrap gitlab --verbose --components-extra=image-reflector-controller,image-automation-controller --owner=otus43 --repository=Infra --branch=main --path=deploy/releases --token-auth --personal
+</pre></code>
+
+Получаем
+<pre><code>
+► connecting to https://gitlab.com
+► cloning branch "main" from Git repository "https://gitlab.com/otus43/Infra.git"
+✔ cloned repository
+► generating component manifests
+✔ generated component manifests
+✔ component manifests are up to date
+► installing components in "flux-system" namespace
+✔ installed components
+✔ reconciled components
+► determining if source secret "flux-system/flux-system" exists
+► generating source secret
+► applying source secret "flux-system/flux-system"
+✔ reconciled source secret
+► generating sync manifests
+✔ generated sync manifests
+✔ sync manifests are up to date
+► applying sync manifests
+✔ reconciled sync configuration
+◎ waiting for Kustomization "flux-system/flux-system" to be reconciled
+✔ Kustomization reconciled successfully
+► confirming components are healthy
+✔ helm-controller: deployment ready
+✔ image-automation-controller: deployment ready
+✔ image-reflector-controller: deployment ready
+✔ kustomize-controller: deployment ready
+✔ notification-controller: deployment ready
+✔ source-controller: deployment ready
+✔ all components are healthy
 </pre></code>
 
 Установка Helm operator
 <pre><code>
-helm upgrade --install helm-operator fluxcd/helm-operator -f helm-operator.values.yaml --namespace flux
+kubectl apply -f https://raw.githubusercontent.com/fluxcd/helm-operator/master/deploy/crds.yaml
+kubectl create namespace flux
+helm repo add fluxcd https://charts.fluxcd.io
+helm upgrade --install helm-operator fluxcd/helm-operator -f helm-operator.values.yaml --namespace flux-system
+
+
+helm upgrade -i helm-operator fluxcd/helm-operator --wait \
+--namespace flux-system \
+--set git.ssh.secretName=flux-git-deploy \
+--set helm.versions=v3
 </pre></code>
 
 Устоновим Service monitor
@@ -155,3 +191,25 @@ helm upgrade --install helm-operator fluxcd/helm-operator -f helm-operator.value
 LATEST=$(curl -s https://api.github.com/repos/prometheus-operator/prometheus-operator/releases/latest | jq -cr .tag_name)
 curl -sL https://github.com/prometheus-operator/prometheus-operator/releases/download/${LATEST}/bundle.yaml | kubectl create -f -
 </pre></code>
+
+Удалим Flux2
+
+flux uninstall
+
+Установим ArgoCD
+
+kubectl create namespace argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+
+Download and instal argoCD CLI tool
+wget https://github.com/argoproj/argo-cd/releases/download/v2.5.9/argocd-linux-amd64
+chmod +x argocd-linux-amd64
+mv argocd-linux-amd64 /usr/local/bin/argocd
+
+Get admin credentials
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
+
+Deploy Application
+argocd login localhost:8080 --username admin
+argocd app create adservice -f deploy/argocd/apps/adservice.yaml
