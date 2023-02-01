@@ -213,3 +213,28 @@ kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.pas
 Deploy Application
 argocd login localhost:8080 --username admin
 argocd app create adservice -f deploy/argocd/apps/adservice.yaml
+argocd app create cartservice -f deploy/argocd/apps/cartservice.yaml
+argocd app create checkoutservice -f deploy/argocd/apps/checkoutservice.yaml
+argocd app create currencyservice -f deploy/argocd/apps/currencyservice.yaml
+argocd app create emailservice -f deploy/argocd/apps/emailservice.yaml
+argocd app create frontend -f deploy/argocd/apps/frontend.yaml
+argocd app create loadgenerator -f deploy/argocd/apps/loadgenerator.yaml
+argocd app create paymentservice -f deploy/argocd/apps/paymentservice.yaml
+argocd app create productcatalogservice -f deploy/argocd/apps/productcatalogservice.yaml
+argocd app create recommendationservice -f deploy/argocd/apps/recommendationservice.yaml
+argocd app create shippingservice -f deploy/argocd/apps/shippingservice.yaml
+argocd app list
+argocd app delete argocd/adservice
+argocd app delete argocd/cartservice
+argocd app delete argocd/checkoutservice
+argocd app delete argocd/currencyservice
+argocd app delete argocd/emailservice
+argocd app delete argocd/frontend
+argocd app delete argocd/loadgenerator
+argocd app delete argocd/paymentservice
+argocd app delete argocd/productcatalogservice
+argocd app delete argocd/recommendationservice
+argocd app delete argocd/shippingservice
+
+
+kubectl apply -f deploy/argocd/resources/cartservice/cartservice.yaml
