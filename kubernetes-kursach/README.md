@@ -324,3 +324,13 @@ kubectl apply -f deploy/argocd/apps/ingress-nginx.yaml
 
 http://35.228.123.225.nip.io/
 https://35.228.123.225.nip.io/
+
+
+Cert Manager и SSL. Его установим вручную и Хелмом
+
+helm repo add jetstack https://charts.jetstack.io
+helm repo update
+helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --version v1.11.0 --set installCRDs=true
+
+kubectl apply -f deploy/argocd/cert-manager/ClusterIssuer.yaml
+
