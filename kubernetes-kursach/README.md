@@ -21,6 +21,7 @@
 * Репозиторий: https://gitlab.com/otus43/microservices-demo/-/tree/main
 * CI Pipeline: https://gitlab.com/otus43/microservices-demo/-/pipelines
 * Репозиторий инфраструктуры: https://gitlab.com/otus43/infra
+* ХипстерШоп: https://35.228.123.225.nip.io/
 
 ### 1.2 Автоматически выложить образы на ДокерХаб
 
@@ -132,8 +133,10 @@ kubectl apply -f deploy/argocd/projects/ingress-nginx.yaml
 https://gitlab.com/otus43/infra/-/blob/main/deploy/argocd/apps/ingress-nginx.yaml<br>
 kubectl apply -f deploy/argocd/apps/ingress-nginx.yaml
 
+kubectl apply -f deploy/argocd/resources/dashboard/ingress.yaml
+kubectl apply -f deploy/argocd/resources/argocd/ingress.yaml
 
-http://35.228.123.225.nip.io/
+http://35.228.123.225.nip.io/<br>
 https://35.228.123.225.nip.io/
 
 
@@ -161,77 +164,24 @@ https://gitlab.com/otus43/infra/-/blob/main/deploy/argocd/resources/frontend/fro
 
 ## 4. Автоматически обновить ХипстерШоп до следующей версии
 
+Меняем версию на следующую
 
+https://gitlab.com/otus43/microservices-demo/-/blob/main/.gitlab-ci.yml#L14
 
+После этого автоматически запустится Pipeline CI скомпилирует новые образы и выложит их на DockerHub
 
+После завершения этого процесса, необходимо обновить версии образов в репозитории инфраструктуры
 
-
-
-
-
-
-<br><br><br><br><br><br><br><br>
-
-
-# Если останется время можно разобраться
-
-KUBE SEAL
-
-https://github.com/bitnami-labs/sealed-secrets
-
-
-https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.19.4/kubeseal-0.19.4-linux-amd64.tar.gz
-
-tar -xf kubeseal-0.19.4-linux-amd64.tar.gz
-chmod +x kubeseal
-sudo mv kubeseal /usr/local/bin/
-
-kubeseal --version
-kubeseal version: 0.19.4
-
-Устанавливаем kubeseal controller
-
-export USER_EMAIL=leo.koteika@gmail.com
-kubectl create clusterrolebinding $USER-cluster-admin-binding --clusterrole=cluster-admin --user=$USER_EMAIL
-kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.19.4/controller.yaml
-
-Создадим sealed секрет для пароля GitLab
-
-export username=pa3mep
-export password=password123
-
-echo $username | base64
-echo $password | base64
-
-cat <<EOF > /tmp/ingress-nginx-git-repo.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  creationTimestamp: null
-  name: ingress-nginx-git-repo
-  namespace: argocd:
-  password: password-base64
-  username: username-base64
-EOF
-
-cd ~/Documents/src/infra/
-
-export USE_GKE_GCLOUD_AUTH_PLUGIN=True
-gcloud container clusters get-credentials otus \
-  --region europe-north1-b \
-  --project flash-ascent-375419 \
-  --internal-ip
-
-cat /tmp/ingress-nginx-git-repo.yaml | kubeseal \
-    --controller-namespace kube-system \
-    --controller-name sealed-secrets-controller \
-    --format yaml \
-    > deploy/argocd/sealed-secrets/ingress-nginx-git-repo.yaml
-
-
-Не работает и надоело. Если останется время, будем разбираться. Короче
-
-kubectl apply -f deploy/argocd/repos/ingress-nginx.yaml
-
-ArgoCD Application
-kubectl apply -f deploy/argocd/apps/ingress-nginx.yaml
+<pre><code>
+https://gitlab.com/otus43/infra/-/blob/main/deploy/argocd/resources/adservice/adservice.yaml#L18
+https://gitlab.com/otus43/infra/-/blob/main/deploy/argocd/resources/cartservice/values.yaml#L3
+https://gitlab.com/otus43/infra/-/blob/main/deploy/argocd/resources/checkoutservice/checkoutservice.yaml#L16
+https://gitlab.com/otus43/infra/-/blob/main/deploy/argocd/resources/currencyservice/currencyservice.yaml#L16
+https://gitlab.com/otus43/infra/-/blob/main/deploy/argocd/resources/emailservice/emailservice.yaml#L16
+https://gitlab.com/otus43/infra/-/blob/main/deploy/argocd/resources/frontend/frontend.yaml#L24
+https://gitlab.com/otus43/infra/-/blob/main/deploy/argocd/resources/loadgenerator/loadgenerator.yaml#L30
+https://gitlab.com/otus43/infra/-/blob/main/deploy/argocd/resources/paymentservice/paymentservice.yaml#L16
+https://gitlab.com/otus43/infra/-/blob/main/deploy/argocd/resources/productcatalogservice/productcatalogservice.yaml#L17
+https://gitlab.com/otus43/infra/-/blob/main/deploy/argocd/resources/recommendationservice/recommendationservice.yaml#L17
+https://gitlab.com/otus43/infra/-/blob/main/deploy/argocd/resources/shippingservice/shippingservice.yaml#L16
+</pre></code>
